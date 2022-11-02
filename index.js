@@ -1,8 +1,9 @@
 const express = require("express");
 const { json } = require("express");
-const flights = require("./controllers/flightController");
+//const flights = require("./controllers/flightController");
 const models = require("./models/Flight");
 const routes = require("./routes/flightRoute");
+const {v4: uuid} = require("uuid");
 
 const app = express();
 
@@ -12,33 +13,38 @@ app.use("/", routes);
 
 const port = process.env.PORT || 3000;
 
+//flight list
 let flightList = [
-  //create dummy flights
-  {
-    id: 1,
-    title: "flight to canada",
-    time: "1pm",
-    price: 26000,
-    date: "26-06-2022"
-  }
+  
 ];
 //Rest api
 
 //targeting all flights
 app.route("/flights")
 //creating a new flight
-.post((req,res) => {
-  //create a new flight schedule
+.post(async (req,res) => {
+ 
   try{
-  let newFlight = req.body;
-  //save flight
-  flightList.push(newFlight);
-  //send back a response 
-  return res.status(200).json({message: "new flight scheduled"});
+    //create a new flight schedule
+    const {title, time, price, date} = await req.body;
+    const flight = {
+      id : uuid(),
+      title,
+      time,
+      price,
+      date
+    }
+    
+    //save flight
+    flightList.push(flight);
+    //send back a response 
+    return res.status(200).json({
+      message: "new flight scheduled",
+      flightList
+    });
   } catch(err){
-    res.send(err);
-    res.status(500).json("oh no!");
-    res.status(404).json("Fill proper parameters");
+    res.status(500).json({message :err});
+    res.status(404).json({message :err});
   }
 })
 //Fetching flights
@@ -46,29 +52,28 @@ app.route("/flights")
   //fetch flights
   //send response
   try{
-    return res.json({flightList});
+    // const flights = models;
+    return res.status(200).json({flightList});
   } catch(err){
-    res.send(err);
-    res.status(500).json("oh no!");
-    res.status(404).json("Flights not found");
+    res.status(500).json({message :err});
+    res.status(404).json({message :err});
   }
 });
 
 //targeting specific flights
 app.route("/flights/:id")
 //fetch single flight
-.get((req,res)=>{
+.get( async (req,res)=>{
   try{
-  let query = req.params.id;
-  let foundFlight = flightList.find(flight => {
+  let query = await req.params.id;
+  let foundFlight = await flightList.find(flight => {
     return String(flight.id) === query;
   });
 
   return res.status(200).json({fight : foundFlight});
   } catch(err){
-    res.send(err);
-    res.status(500).json("oh no!");
-    res.status(404).json("Item not found");
+    res.status(500).json({message :err});
+    res.status(404).json({message :err});
   }
 })
 //update or edit a flight
@@ -80,9 +85,8 @@ app.route("/flights/:id")
   flightList[objIndex] = changes;
   return res.status(200).json({flightList});
   } catch(err){
-    res.send(err);
-    res.status(500).json("oh no!");
-    res.status(404).json("Unable to edit flight");
+    res.status(500).json({message :err});
+    res.status(404).json({message :err})
   }
 })
 //delete
@@ -94,9 +98,8 @@ app.route("/flights/:id")
   flightList.splice(deleteFlight, 1);
   return res.status(200).json({flightList});
   } catch(err){
-    res.send(err);
-    res.status(500).json("oh no!");
-    res.status(404).json("Item not found");
+    res.status(500).json({message :err});
+    res.status(404).json({message :err})
   }
 
 });
